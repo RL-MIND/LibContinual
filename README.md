@@ -6,6 +6,7 @@
 </div>
 
 ## Introduction
+[![arXiv](https://img.shields.io/badge/arXiv-2512.22029-b31b1b.svg)](https://arxiv.org/abs/2512.22029)
 <div style="text-align: justify">
 LibContinual is an open-source continual learning toolbox based on PyTorch. The framework currently supports PyTorch 1.13+ (compatibility with earlier versions not fully guaranteed) and provides comprehensive implementations of state-of-the-art continual learning algorithms.
 </div>
