@@ -6,7 +6,7 @@ GPU="${1:-0}"
 SEEDS="${2:-0 1 2 3 4}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_TAG="$(date +%Y%m%d_%H%M%S)"
 LOG_DIR="${PROJECT_ROOT}/output/runs/er_cifar100_buf500_${RUN_TAG}"
 

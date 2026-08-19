@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIG="ider_cifar100_buf2000"
+CONFIG="er_cifar100_buf2000"
 GPU="${1:-0}"
-SEEDS="0 1 2 3"
+SEEDS="${2:-0 1 2 3 4}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_TAG="$(date +%Y%m%d_%H%M%S)"
-LOG_DIR="${PROJECT_ROOT}/output/runs/ider_cifar100_buf2000_seed0_3_${RUN_TAG}"
+LOG_DIR="${PROJECT_ROOT}/output/runs/er_cifar100_buf2000_${RUN_TAG}"
 
 cd "${PROJECT_ROOT}"
 mkdir -p "${LOG_DIR}"
@@ -18,7 +18,7 @@ if [ ! -f "datasets/cifar-100-python/train" ] || [ ! -f "datasets/cifar-100-pyth
   exit 1
 fi
 
-echo "Experiment : IDER, CIFAR-100, buffer=2000, CIL"
+echo "Experiment : PaperER baseline, CIFAR-100, buffer=2000, CIL"
 echo "GPU        : ${GPU}"
 echo "Seeds      : ${SEEDS}"
 echo "Log dir    : ${LOG_DIR}"
@@ -31,7 +31,7 @@ done
 
 SUMMARY_FILE="${LOG_DIR}/summary.txt"
 {
-  echo "Experiment: IDER CIFAR-100 buffer=2000 CIL"
+  echo "Experiment: PaperER CIFAR-100 buffer=2000 CIL"
   echo "Seeds: ${SEEDS}"
   echo
   for SEED in ${SEEDS}; do

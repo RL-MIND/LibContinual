@@ -2,8 +2,8 @@
 set -euo pipefail
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: bash scripts/train_one_config.sh <config_name> [gpu] [seed]"
-  echo "Example: bash scripts/train_one_config.sh ider_cifar100_buf500 0 4"
+  echo "Usage: bash reproduce/ider/scripts/train_one_config.sh <config_name> [gpu] [seed]"
+  echo "Example: bash reproduce/ider/scripts/train_one_config.sh ider_cifar100_buf500 0 4"
   exit 1
 fi
 
@@ -12,7 +12,7 @@ GPU="${2:-0}"
 SEED="${3:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_TAG="$(date +%Y%m%d_%H%M%S)"
 LOG_DIR="${PROJECT_ROOT}/output/runs/single_${CONFIG}_seed${SEED}_${RUN_TAG}"
 LOG_FILE="${LOG_DIR}/train.log"

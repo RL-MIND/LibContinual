@@ -28,27 +28,27 @@ The IDER and ER baseline configs are in [config/zz_IDER](../../config/zz_IDER/).
 Run one config:
 
 ```bash
-bash scripts/train_one_config.sh ider_cifar100_buf500 0 0
+bash reproduce/ider/scripts/train_one_config.sh ider_cifar100_buf500 0 0
 ```
 
 Run the 5-seed IDER experiments:
 
 ```bash
-bash scripts/run_cifar10_buf200_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_cifar10_buf500_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_cifar100_buf500_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_cifar100_buf2000_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_tinyimagenet_buf500.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_cifar10_buf200_5seeds.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_cifar10_buf500_5seeds.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_cifar100_buf500_5seeds.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_cifar100_buf2000_5seeds.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_tinyimagenet_buf500.sh 0 "0 1 2 3 4"
 ```
 
 Run the 5-seed ER baseline experiments:
 
 ```bash
-bash scripts/run_er_cifar10_buf200.sh 0 "0 1 2 3 4"
-bash scripts/run_er_cifar10_buf500.sh 0 "0 1 2 3 4"
-bash scripts/run_er_cifar100_buf500.sh 0 "0 1 2 3 4"
-bash scripts/run_er_cifar100_buf2000.sh 0 "0 1 2 3 4"
-bash scripts/run_er_tinyimagenet_buf500.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_er_cifar10_buf200.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_er_cifar10_buf500.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_er_cifar100_buf500.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_er_cifar100_buf2000.sh 0 "0 1 2 3 4"
+bash reproduce/ider/scripts/run_er_tinyimagenet_buf500.sh 0 "0 1 2 3 4"
 ```
 
 Experiment logs and generated summaries are written under the local `output/` directory, which is intentionally excluded from version control.

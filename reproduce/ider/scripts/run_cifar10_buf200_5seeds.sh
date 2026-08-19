@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIG="ider_cifar10_buf500"
+CONFIG="ider_cifar10_buf200"
 GPU="${1:-0}"
 SEEDS="${2:-0 1 2 3 4}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 RUN_TAG="$(date +%Y%m%d_%H%M%S)"
-LOG_DIR="${PROJECT_ROOT}/output/runs/cifar10_buf500_5seeds_${RUN_TAG}"
+LOG_DIR="${PROJECT_ROOT}/output/runs/cifar10_buf200_5seeds_${RUN_TAG}"
 
 cd "${PROJECT_ROOT}"
 mkdir -p "${LOG_DIR}"
 
-echo "Experiment : IDER, CIFAR-10, buffer=500, CIL, 5 seeds"
+echo "Experiment : CIFAR10, buffer=200, CIL, 5 seeds"
 echo "Config     : ${CONFIG}"
 echo "GPU        : ${GPU}"
 echo "Seeds      : ${SEEDS}"
 echo "Log dir    : ${LOG_DIR}"
 
 if [ ! -f "datasets/cifar-10-batches-py/data_batch_1" ] || [ ! -f "datasets/cifar-10-batches-py/test_batch" ]; then
-  echo "ERROR: CIFAR-10 binary files were not found under datasets/cifar-10-batches-py."
+  echo "ERROR: CIFAR10 binary files were not found under datasets/cifar-10-batches-py."
   exit 1
 fi
 
@@ -32,7 +32,7 @@ done
 
 SUMMARY_FILE="${LOG_DIR}/summary.txt"
 {
-  echo "Experiment: IDER CIFAR-10 buffer=500 CIL"
+  echo "Experiment: CIFAR10 buffer=200 CIL"
   echo "Config: ${CONFIG}"
   echo "GPU: ${GPU}"
   echo "Seeds: ${SEEDS}"
