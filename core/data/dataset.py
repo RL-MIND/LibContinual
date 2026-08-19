@@ -1,7 +1,6 @@
 import os
 import torch
 import pickle
-import random
 import numpy as np
 
 from PIL import Image
@@ -10,6 +9,15 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from continuum.datasets import TinyImageNet200
 from continuum import ClassIncremental
+
+
+def _processed_tiny_dir(data_root):
+    processed_dir = os.path.join(data_root, "processed")
+    if os.path.isdir(processed_dir):
+        return processed_dir
+    if os.path.basename(os.path.normpath(data_root)) == "processed":
+        return data_root
+    return processed_dir
 
 class ContinualDatasets:
     def __init__(self, dataset, mode, task_num, init_cls_num, inc_cls_num, data_root, cls_map, trfms, batchsize, num_workers, config):
@@ -25,8 +33,18 @@ class ContinualDatasets:
         self.config = config
         self.dataset = dataset
 
-        if self.dataset == 'binary_cifar100':
-            datasets.CIFAR100(self.data_root, download = True)
+        if self.dataset in ['binary_cifar10', 'binary_cifar100']:
+            num_classes = 10 if self.dataset == 'binary_cifar10' else 100
+            if self.cls_map is None:
+                class_order = self.config.get('class_order', list(range(num_classes)))
+                self.cls_map = {label: ori_label for label, ori_label in enumerate(class_order)}
+            if self.dataset == 'binary_cifar10':
+                datasets.CIFAR10(self.data_root, download=True)
+            else:
+                datasets.CIFAR100(self.data_root, download=True)
+        elif self.dataset == 'processed_tinyimg':
+            class_order = self.config.get('class_order', list(range(200)))
+            self.cls_map = {label: ori_label for label, ori_label in enumerate(class_order)}
 
         self.create_loaders()
 
@@ -70,7 +88,7 @@ class ContinualDatasets:
 
                 self.dataloaders.append(DataLoader(
                     dataset,
-                    shuffle = True,
+                    shuffle = self.mode == 'train',
                     batch_size = self.batchsize,
                     drop_last = False,
                     num_workers = self.num_workers,
@@ -85,11 +103,11 @@ class ContinualDatasets:
                 end_idx = start_idx + (self.init_cls_num if i ==0 else self.inc_cls_num)
                 self.dataloaders.append(DataLoader(
                     SingleDataset(self.dataset, self.data_root, self.mode, self.init_cls_num, self.inc_cls_num, self.cls_map, self.trfms, start_idx, end_idx),
-                    shuffle = True,
+                    shuffle = self.mode == 'train',
                     batch_size = self.batchsize,
                     drop_last = False,
                     num_workers = self.num_workers,
-                    pin_memory=False
+                    pin_memory=self.config['pin_memory']
                 ))
 
     def get_loader(self, task_idx):
@@ -247,7 +265,7 @@ class SingleDataset(Dataset):
             self.images, self.labels, self.labels_name = self._init_datalist()
 
     def __getitem__(self, idx):
-        if self.dataset == 'binary_cifar100':
+        if self.dataset in ['binary_cifar10', 'binary_cifar100']:
 
             image = self.images[idx]
             image = Image.fromarray(np.uint8(image))
@@ -255,6 +273,12 @@ class SingleDataset(Dataset):
         elif self.dataset == 'tiny-imagenet':
             img_path = self.images[idx]
             image = Image.open(img_path).convert("RGB")
+
+        elif self.dataset == 'processed_tinyimg':
+            image = self.images[idx]
+            if np.max(image) <= 1.0:
+                image = np.uint8(255 * image)
+            image = Image.fromarray(np.uint8(image)).convert("RGB")
 
         else:
             
@@ -264,7 +288,7 @@ class SingleDataset(Dataset):
         label = self.labels[idx]
         image = self.trfms(image)
 
-        return {"image": image, "label": label}
+        return {"image": image, "label": label, "index": idx}
     
     def __len__(self,):
         return len(self.labels)
@@ -273,15 +297,29 @@ class SingleDataset(Dataset):
 
         imgs, labels, labels_name = [], [], []
 
-        if self.dataset == 'binary_cifar100':
-            
-            with open(os.path.join(self.data_root, 'cifar-100-python', self.mode), 'rb') as f:
-                load_data = pickle.load(f, encoding='latin1')
+        if self.dataset in ['binary_cifar10', 'binary_cifar100']:
+            if self.dataset == 'binary_cifar10':
+                data_dir = os.path.join(self.data_root, 'cifar-10-batches-py')
+                file_names = [f'data_batch_{idx}' for idx in range(1, 6)] if self.mode == 'train' else ['test_batch']
+                data_chunks, label_chunks = [], []
+                for file_name in file_names:
+                    with open(os.path.join(data_dir, file_name), 'rb') as f:
+                        load_data = pickle.load(f, encoding='latin1')
+                    data_chunks.append(load_data['data'])
+                    label_chunks.extend(load_data['labels'])
+                raw_data = np.concatenate(data_chunks, axis=0)
+                raw_labels = label_chunks
+            else:
+                with open(os.path.join(self.data_root, 'cifar-100-python', self.mode), 'rb') as f:
+                    load_data = pickle.load(f, encoding='latin1')
+                raw_data = load_data['data']
+                raw_labels = load_data['fine_labels']
 
-            cls_map = self.cls_map or {label: label for label in range(100)}
+            num_classes = 10 if self.dataset == 'binary_cifar10' else 100
+            cls_map = self.cls_map or {label: label for label in range(num_classes)}
             new_label_by_old = {old_label: new_label for new_label, old_label in cls_map.items()}
 
-            for data, label in zip(load_data['data'], load_data['fine_labels']):
+            for data, label in zip(raw_data, raw_labels):
 
                 if label not in new_label_by_old:
                     continue
@@ -293,10 +331,34 @@ class SingleDataset(Dataset):
                     b = data[2048:].reshape(32, 32)
 
                     tt_data = np.dstack((r, g, b))
-
                     imgs.append(tt_data)
                     labels.append(new_label)
                     labels_name.append(new_label)
+
+        elif self.dataset == 'processed_tinyimg':
+            split = 'train' if self.mode == 'train' else 'val'
+            processed_dir = _processed_tiny_dir(self.data_root)
+            label_range = range(self.start_idx, self.end_idx)
+            ori_to_label = {self.cls_map[id]: id for id in label_range}
+            target_classes = np.array(list(ori_to_label.keys()))
+
+            for num in range(20):
+                data_path = os.path.join(processed_dir, f'x_{split}_{num + 1:02d}.npy')
+                label_path = os.path.join(processed_dir, f'y_{split}_{num + 1:02d}.npy')
+                raw_labels = np.load(label_path)
+                keep_mask = np.isin(raw_labels, target_classes)
+                if not np.any(keep_mask):
+                    continue
+
+                raw_data = np.load(data_path, mmap_mode='r')
+                kept_data = raw_data[keep_mask]
+                kept_labels = raw_labels[keep_mask]
+
+                for data, label in zip(kept_data, kept_labels):
+                    label = int(label)
+                    imgs.append(np.asarray(data))
+                    labels.append(ori_to_label[label])
+                    labels_name.append(label)
 
         else:
 

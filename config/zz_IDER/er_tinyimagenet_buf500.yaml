@@ -1,0 +1,76 @@
+dataset: &dataset processed_tinyimg
+data_root: ./datasets/TINYIMG
+total_cls_num: &total_cls_num 200
+init_cls_num: &init_cls_num 20
+inc_cls_num: &inc_cls_num 20
+task_num: 10
+image_size: 64
+save_path: ./
+
+train_trfms:
+  - RandomCrop:
+      size: 64
+      padding: 4
+  - RandomHorizontalFlip: {}
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.4802, 0.4480, 0.3975]
+      std: [0.2770, 0.2691, 0.2821]
+test_trfms:
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.4802, 0.4480, 0.3975]
+      std: [0.2770, 0.2691, 0.2821]
+
+seed: 0
+deterministic: True
+device_ids: auto
+n_gpu: 1
+num_workers: 4
+pin_memory: False
+
+batch_size: 32
+init_epoch: 100
+epoch: 100
+val_per_epoch: 100
+testing_times: 1
+testing_per_task: True
+setting: task-agnostic
+eval_with_test: True
+
+optimizer:
+  name: SGD
+  kwargs:
+    lr: 0.03
+    momentum: 0.0
+    weight_decay: 0.0
+
+lr_scheduler:
+  name: MultiStepLR
+  kwargs:
+    gamma: 0.1
+    milestones: [35, 60, 75]
+
+backbone:
+  name: resnet18
+  kwargs:
+    num_classes: *total_cls_num
+    args:
+      dataset: *dataset
+
+buffer:
+  name: LinearBuffer
+  kwargs:
+    buffer_size: 500
+    batch_size: 32
+    strategy: random
+
+classifier:
+  name: PaperER
+  kwargs:
+    num_class: *total_cls_num
+    feat_dim: 512
+    init_cls_num: *init_cls_num
+    inc_cls_num: *inc_cls_num
+    minibatch_size: 32
+    buffer_storage: tensor

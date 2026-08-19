@@ -29,6 +29,7 @@ LibContinual is an open-source continual learning toolbox based on PyTorch. The 
 + [API (CVPR 2023)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/api/README.md): Adaptive Plasticity Improvement for Continual Learning.
 + [RanPAC (NeurIPS 2023)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/ranpac/README.md): Random Projections and Pre-trained Models for Continual Learning.
 + [EWC-DR (CVPR 2026)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/ewcdr/README.md): Elastic Weight Consolidation Done Right for Continual Learning.
++ [IDER (ICLR 2026)](reproduce/ider/README.md): IDempotent Experience Replay for Reliable Continual Learning.
 <!-- + [PRAKA (ICCV 2023)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/praka/README.md): Prototype Reminiscence and Augmented Asymmetric Knowledge Aggregation for Non-Exemplar Class-Incremental Learning. -->
 <!-- + [DER (CVPR 2021)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/der/README.md): Dynamically Expandable Representation for Class Incremental Learning. -->
 

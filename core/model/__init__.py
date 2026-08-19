@@ -13,6 +13,8 @@ from .ocm import OCM
 from .eraml import ERAML
 from .erace import ERACE
 from .der import DER
+from .ider import IDER
+from .paper_er import PaperER
 from .dualprompt import DualPrompt
 from .l2p import L2P
 from .codaprompt import CodaPrompt

@@ -22,8 +22,7 @@ class AverageMeter(object):
         self.reset()
 
     def reset(self):
-        for col in self._data.columns:
-            self._data[col].values[:] = 0
+        self._data.loc[:, :] = 0
 
     def update(self, key, value, n=1):
         if self.writer is not None:
@@ -200,7 +199,7 @@ def fmt_date_str(date=None, fmt="%y-%m-%d-%H-%M-%S"):
     return date.strftime(fmt)
 
 def compute_bwt(acc_table, curr_acc, task_idx):
-    '''
+    r'''
     After training T tasks, $BWT = \frac{\sum_{i=3}^T\sum_{j=1}^{i-2}R_{i,j}-R{j,j}}{T(T-1)/2}$
     Equivalent to Positive BwT of Continuum
     https://arxiv.org/pdf/1810.13166
@@ -222,7 +221,7 @@ def compute_bwt(acc_table, curr_acc, task_idx):
 
 
 def compute_frgt(acc_table, curr_acc, task_idx):
-    '''
+    r'''
     After training T tasks, $Frgt = \frac{\sum_{j=1}^{T-2}R_{T-1,j}-R_{j,j}}{T-1}$
     Equivalent to Forgetting of Continuum
     '''
@@ -230,6 +229,47 @@ def compute_frgt(acc_table, curr_acc, task_idx):
     if task_idx > 1:
         return sum(np.diag(acc_table)[:task_idx - 1] - curr_acc[:task_idx+1][:-2]) / task_idx
     return 0.
+
+
+def compute_paper_faa(acc_table, task_idx):
+    """
+    Final Average Accuracy (FAA) used by IDER: average accuracy over all
+    tasks observed so far after finishing the current task.
+    """
+    return float(np.mean(acc_table[task_idx, :task_idx + 1]))
+
+
+def compute_paper_ff(acc_table, task_idx):
+    """
+    Final Forgetting (FF) used by IDER:
+    mean over old tasks of historical best accuracy minus final accuracy.
+    """
+    if task_idx <= 0:
+        return 0.
+
+    old_task_acc = acc_table[:task_idx + 1, :task_idx]
+    best_old_acc = np.max(old_task_acc, axis=0)
+    final_old_acc = acc_table[task_idx, :task_idx]
+    return float(np.mean(best_old_acc - final_old_acc))
+
+
+def compute_ece(confidences, correctness, n_bins=15):
+    """Expected Calibration Error in the IDER paper."""
+    if len(confidences) == 0:
+        return None
+
+    confidences = np.asarray(confidences)
+    correctness = np.asarray(correctness).astype(float)
+    ece = 0.
+    bin_boundaries = np.linspace(0., 1., n_bins + 1)
+    for bin_lower, bin_upper in zip(bin_boundaries[:-1], bin_boundaries[1:]):
+        in_bin = (confidences > bin_lower) & (confidences <= bin_upper)
+        prop_in_bin = np.mean(in_bin)
+        if prop_in_bin > 0:
+            acc_in_bin = np.mean(correctness[in_bin])
+            conf_in_bin = np.mean(confidences[in_bin])
+            ece += prop_in_bin * abs(conf_in_bin - acc_in_bin)
+    return float(ece * 100)
 
 
 def compute_fps(model, config):

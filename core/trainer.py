@@ -308,7 +308,7 @@ class Trainer(object):
 
                 dataloader, val_bias_dataloader = self.model.spilt_and_update(dataloader, self.buffer, task_idx, self.config)
 
-            elif isinstance(self.buffer, (LinearBuffer, LinearHerdingBuffer)) and self.buffer.buffer_size > 0 and task_idx > 0:
+            elif method_name not in ["IDER", "PaperER"] and isinstance(self.buffer, (LinearBuffer, LinearHerdingBuffer)) and self.buffer.buffer_size > 0 and task_idx > 0:
                 datasets = dataloader.dataset
                 if isinstance(datasets.images, list):
                     datasets.images.extend(self.buffer.images)
@@ -413,7 +413,7 @@ class Trainer(object):
                 model.after_task(task_idx, self.buffer, self.train_loader.get_loader(task_idx), self.test_loader.get_loader(task_idx))
 
             # Update Buffer
-            if method_name not in ['bic', 'ERACE', 'ERAML']:
+            if method_name not in ['bic', 'ERACE', 'ERAML', 'IDER', 'PaperER']:
                 self.buffer.total_classes += self.init_cls_num if task_idx == 0 else self.inc_cls_num
                 if self.buffer.buffer_size > 0:
                     if self.buffer.strategy == 'herding':
@@ -460,6 +460,7 @@ class Trainer(object):
 
                     #bias_scheduler.step()
 
+            paper_ece_sum, paper_ece_count = 0., 0
             for test_idx in range(testing_times):
                 if self.rank == 0:
                     print(f"================Test {test_idx+1}/{testing_times} of Task {task_idx}!================")
@@ -467,6 +468,9 @@ class Trainer(object):
                 test_acc = self._validate(task_idx)
 
                 batch_last_acc, per_task_acc = test_acc['avg_acc'], test_acc['per_task_acc']
+                if test_acc.get('paper_ece') is not None:
+                    paper_ece_sum += test_acc['paper_ece']
+                    paper_ece_count += 1
                 best_batch_last_acc = max(batch_last_acc, best_batch_last_acc)
 
                 task_last_acc = np.mean(per_task_acc)
@@ -480,6 +484,8 @@ class Trainer(object):
                     print(f" * [Task] Last Average Acc: {task_last_acc:.2f} (Best: {best_task_last_acc:.2f})")
                     print(f" * Forgetting: {frgt:.3f} (Best: {best_frgt:.3f})")
                     print(f" * Backward Transfer: {bwt:.2f} (Best: {best_bwt:.2f})")
+                    if test_acc.get('paper_ece') is not None:
+                        print(f" * [Paper] ECE: {test_acc['paper_ece']:.3f}")
                     print(f" * Per-Task Acc: {per_task_acc}")
 
                 batch_last_acc_list[task_idx] += batch_last_acc # avg_acc_list[task_idx] += avg_acc
@@ -498,6 +504,9 @@ class Trainer(object):
             task_last_acc = task_last_acc_list[task_idx]
 
             frgt, bwt = compute_frgt(acc_table, acc_table[task_idx], task_idx), compute_bwt(acc_table, acc_table[task_idx], task_idx)
+            paper_faa = compute_paper_faa(acc_table, task_idx)
+            paper_ff = compute_paper_ff(acc_table, task_idx)
+            paper_ece = paper_ece_sum / paper_ece_count if paper_ece_count > 0 else None
             best_frgt, best_bwt = min(frgt, best_frgt), max(bwt, best_bwt)
             if task_idx > 1:
                 frgt_list.append(frgt)
@@ -509,6 +518,10 @@ class Trainer(object):
                 print(f" * [Task] Last Average Acc: {task_last_acc:.2f} (Best: {best_task_last_acc:.2f})")
                 print(f" * Forgetting: {frgt:.3f} (Best: {best_frgt:.3f})")
                 print(f" * Backward Transfer: {bwt:.2f} (Best: {best_bwt:.2f})")
+                print(f" * [Paper] FAA/CIL: {paper_faa:.2f}")
+                print(f" * [Paper] FF: {paper_ff:.3f}")
+                if paper_ece is not None:
+                    print(f" * [Paper] ECE: {paper_ece:.3f}")
                 print(f" * Per-Task Acc: {acc_table[task_idx][:task_idx + 1]}")
 
         batch_ovr_avg_acc = np.mean(batch_last_acc_list) #batch_ovr_avg_acc = np.mean(avg_acc_list)
@@ -518,6 +531,8 @@ class Trainer(object):
         
         ovr_bwt = np.mean(bwt_list) if len(bwt_list) > 0 else float('-inf')
         ovr_frgt = np.mean(frgt_list) if len(frgt_list) > 0 else float('inf')
+        paper_faa = compute_paper_faa(acc_table, task_idx)
+        paper_ff = compute_paper_ff(acc_table, task_idx)
 
         if self.rank == 0:
             print(f"================Overall Result of {self.task_num} Tasks!================")
@@ -529,6 +544,10 @@ class Trainer(object):
             print(f" * [Task] Overall Avg Acc : {task_ovr_avg_acc:.2f}")
             print(f" * Overall Frgt : {ovr_frgt:.3f}")
             print(f" * Overall BwT : {ovr_bwt:.2f}")
+            print(f" * [Paper] Final Average Accuracy (FAA/CIL) : {paper_faa:.2f}")
+            print(f" * [Paper] Final Forgetting (FF) : {paper_ff:.3f}")
+            if 'paper_ece' in locals() and paper_ece is not None:
+                print(f" * [Paper] Expected Calibration Error (ECE) : {paper_ece:.3f}")
             print(f" * Average Acc Table : \n{acc_table}")
 
             print(f"================Model Performance Analysis================")
@@ -611,6 +630,9 @@ class Trainer(object):
 
             self.optimizer.step()
 
+            if hasattr(model, 'after_observe'):
+                model.after_observe()
+
             if self.config["classifier"]["name"] in ['ERACE', 'ERAML']:
                 model.add_reservoir()
 
@@ -632,6 +654,24 @@ class Trainer(object):
 
         per_task_acc = []
         count_all, correct_all = 0, 0
+        ece_confidences, ece_correctness = [], []
+
+        def _infer_batch(batch, task_id=None):
+            if self.config['setting'] == 'task-agnostic' and hasattr(model, 'predict_logits'):
+                logits = model.predict_logits(batch)
+                probs = torch.softmax(logits, dim=1)
+                confidences, preds = torch.max(probs, dim=1)
+                labels = batch['label'].to(self.device)
+                correct = preds == labels
+                ece_confidences.extend(confidences.detach().cpu().numpy().tolist())
+                ece_correctness.extend(correct.detach().cpu().numpy().tolist())
+                return preds, correct.float().mean().item()
+
+            if self.config['setting'] == 'task-aware':
+                return model.inference(batch, task_id=task_id)
+            if self.config['setting'] == 'task-agnostic':
+                return model.inference(batch)
+            raise ValueError(f"Unsupported setting: {self.config['setting']}")
 
         if self.config['testing_per_task']:
 
@@ -642,13 +682,9 @@ class Trainer(object):
                     correct_task, count_task = 0, 0
 
                     for b, batch in tqdm(enumerate(dataloader), total=len(dataloader), desc = f"Testing on Task {t} data", disable=self.rank != 0):  # Disable tqdm for non-master processes
+                        output, acc = _infer_batch(batch, task_id=t)
                         
-                        if self.config['setting'] == 'task-aware':
-                            output, acc = model.inference(batch, task_id=t)
-                        elif self.config['setting'] == 'task-agnostic':
-                            output, acc = model.inference(batch)
-                        
-                        correct_task += int(acc * batch['label'].shape[0])
+                        correct_task += int(round(acc * batch['label'].shape[0]))
                         count_task += batch['label'].shape[0]
 
                     correct_all += correct_task
@@ -699,9 +735,7 @@ class Trainer(object):
                     if self.config['setting'] == 'task-aware':
                         print('Mostly methods dont support this, set testing_per_task to False')
                         raise NotImplementedError
-                        output, acc = model.inference(batch, task_id=None)
-                    elif self.config['setting'] == 'task-agnostic':
-                        output, acc = model.inference(batch)
+                    output, acc = _infer_batch(batch)
                     preds = output.cpu().numpy()
 
                     labels = batch['label'].cpu().numpy()
@@ -720,7 +754,10 @@ class Trainer(object):
 
         avg_acc = round(correct_all * 100 / count_all, 2)
 
+        paper_ece = compute_ece(ece_confidences, ece_correctness)
+
         return {
             "avg_acc": avg_acc,
-            "per_task_acc": per_task_acc
+            "per_task_acc": per_task_acc,
+            "paper_ece": paper_ece,
         }

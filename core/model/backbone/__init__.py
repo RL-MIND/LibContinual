@@ -1,4 +1,5 @@
 from .resnet import *
+from .resnet_id import *
 from .vit import vit_pt_imnet
 from .vit import vit_pt_imnet_in21k_adapter
 from .vit import vit_cl_lora
