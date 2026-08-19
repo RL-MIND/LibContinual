@@ -37,10 +37,11 @@ class ContinualDatasets:
 
             if 'class_order' in self.config:
                 class_order = self.config['class_order']
+            elif self.config.get('shuffle', False):
+                rng = np.random.RandomState(self.config['seed'])
+                class_order = rng.permutation(200).tolist()
             else:
                 class_order = list(range(200))
-                random.seed(self.config['seed'])
-                random.shuffle(class_order)
 
             scenario = ClassIncremental(
                 TinyImageNet200(self.data_root, train=self.mode == 'train', download=True),
@@ -277,9 +278,16 @@ class SingleDataset(Dataset):
             with open(os.path.join(self.data_root, 'cifar-100-python', self.mode), 'rb') as f:
                 load_data = pickle.load(f, encoding='latin1')
 
+            cls_map = self.cls_map or {label: label for label in range(100)}
+            new_label_by_old = {old_label: new_label for new_label, old_label in cls_map.items()}
+
             for data, label in zip(load_data['data'], load_data['fine_labels']):
 
-                if label in range(self.start_idx, self.end_idx):
+                if label not in new_label_by_old:
+                    continue
+
+                new_label = new_label_by_old[label]
+                if new_label in range(self.start_idx, self.end_idx):
                     r = data[:1024].reshape(32, 32)
                     g = data[1024:2048].reshape(32, 32)
                     b = data[2048:].reshape(32, 32)
@@ -287,8 +295,8 @@ class SingleDataset(Dataset):
                     tt_data = np.dstack((r, g, b))
 
                     imgs.append(tt_data)
-                    labels.append(label)
-                    labels_name.append(label)
+                    labels.append(new_label)
+                    labels_name.append(new_label)
 
         else:
 

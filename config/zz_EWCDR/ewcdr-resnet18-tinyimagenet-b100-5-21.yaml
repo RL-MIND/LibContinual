@@ -1,0 +1,27 @@
+includes:
+  - zz_EWCDR/tinyimagenet_common.yaml
+
+init_cls_num: 100
+inc_cls_num: 5
+task_num: 21
+
+backbone:
+  name: resnet18
+  kwargs:
+    num_classes: 200
+    args:
+      dataset: tiny-imagenet
+      init_cls_num: 100
+      inc_cls_num: 5
+
+classifier:
+  name: EWCDR
+  kwargs:
+    num_class: 200
+    feat_dim: 512
+    init_cls_num: 100
+    inc_cls_num: 5
+    task_num: 21
+    lamda: 10000
+    omega_max: 0.0001
+

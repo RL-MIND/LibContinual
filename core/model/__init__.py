@@ -8,6 +8,7 @@ from .lwf import LWF
 from .wa import WA
 from .bic import bic
 from .ewc import EWC
+from .ewcdr import EWCDR
 from .ocm import OCM
 from .eraml import ERAML
 from .erace import ERACE

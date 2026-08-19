@@ -165,19 +165,25 @@ class Trainer(object):
                 torch.optim, "optimizer", config, params=model.get_parameters(config)
             )
 
+        scheduler_config = config["lr_scheduler"]
+        if self.task_idx == 0 and "init_lr_scheduler" in config.keys():
+            scheduler_config = config["init_lr_scheduler"]
+
         # Check if the learning rate scheduler specified in the configuration is "CosineSchedule"
-        if config['lr_scheduler']['name'] == "CosineSchedule":
-            scheduler = CosineSchedule(optimizer, K=config['lr_scheduler']['kwargs']['K'])
-        elif config['lr_scheduler']['name'] == "PatienceSchedule":
-            scheduler = PatienceSchedule(optimizer, patience = config['lr_scheduler']['kwargs']['patience'], factor = config['lr_scheduler']['kwargs']['factor'])
-        elif config['lr_scheduler']['name'] == "Constant":
+        if scheduler_config['name'] == "CosineSchedule":
+            scheduler = CosineSchedule(optimizer, K=scheduler_config['kwargs']['K'])
+        elif scheduler_config['name'] == "PatienceSchedule":
+            scheduler = PatienceSchedule(optimizer, patience = scheduler_config['kwargs']['patience'], factor = scheduler_config['kwargs']['factor'])
+        elif scheduler_config['name'] == "Constant":
             scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda e: 1)
-        elif config['lr_scheduler']['name'] == "CosineAnnealingWarmUp":
+        elif scheduler_config['name'] == "CosineAnnealingWarmUp":
             T_max = len(self.train_loader.get_loader(self.task_idx))
             T_max *= init_epoch if self.task_idx == 0 else config['epoch']
-            scheduler = CosineAnnealingWarmUp(optimizer, config['lr_scheduler']['kwargs']['warmup_length'], T_max)
+            scheduler = CosineAnnealingWarmUp(optimizer, scheduler_config['kwargs']['warmup_length'], T_max)
         else:
-            scheduler = get_instance(torch.optim.lr_scheduler, "lr_scheduler", config, optimizer=optimizer)
+            scheduler = getattr(torch.optim.lr_scheduler, scheduler_config["name"])(
+                optimizer=optimizer, **scheduler_config["kwargs"]
+            )
 
         return init_epoch, config['epoch'], optimizer, scheduler
 

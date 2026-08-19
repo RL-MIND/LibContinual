@@ -1,0 +1,86 @@
+dataset: &dataset binary_cifar100
+data_root: ./data/binary_cifar100
+shuffle: True
+
+total_cls_num: &total_cls_num 100
+init_cls_num: &init_cls_num 5
+inc_cls_num: &inc_cls_num 5
+task_num: &task_num 20
+image_size: &image_size 32
+
+init_epoch: 200
+epoch: 180
+val_per_epoch: 5
+batch_size: 128
+num_workers: 4
+testing_times: 1
+seed: 1993
+
+train_trfms:
+  - RandomCrop:
+      size: *image_size
+      padding: 4
+  - RandomHorizontalFlip: {}
+  - ColorJitter:
+      brightness: 0.24705882352941178
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.5071, 0.4867, 0.4408]
+      std: [0.2675, 0.2565, 0.2761]
+
+test_trfms:
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.5071, 0.4867, 0.4408]
+      std: [0.2675, 0.2565, 0.2761]
+
+init_optimizer:
+  name: SGD
+  kwargs:
+    lr: 0.1
+    momentum: 0.9
+    weight_decay: 0.0005
+
+optimizer:
+  name: SGD
+  kwargs:
+    lr: 0.1
+    momentum: 0.9
+    weight_decay: 0.0002
+
+init_lr_scheduler:
+  name: MultiStepLR
+  kwargs:
+    gamma: 0.1
+    milestones: [60, 120, 170]
+
+lr_scheduler:
+  name: MultiStepLR
+  kwargs:
+    gamma: 0.1
+    milestones: [70, 120, 150]
+
+backbone:
+  name: resnet18
+  kwargs:
+    num_classes: *total_cls_num
+    args:
+      dataset: *dataset
+
+buffer:
+  name: LinearBuffer
+  kwargs:
+    buffer_size: 0
+    batch_size: 128
+    strategy: herding
+
+classifier:
+  name: EWCDR
+  kwargs:
+    num_class: *total_cls_num
+    feat_dim: 512
+    init_cls_num: *init_cls_num
+    inc_cls_num: *inc_cls_num
+    task_num: *task_num
+    lamda: 10000
+    omega_max: 0.0001
