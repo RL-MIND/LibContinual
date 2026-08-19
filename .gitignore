@@ -14,3 +14,4 @@ __pycache__
 /old_requirements.yaml
 /IDER_EXPERIMENT_REPORT.md
 /run.sh
+/reproduce/ider/scripts/
