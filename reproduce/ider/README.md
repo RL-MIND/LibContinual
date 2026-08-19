@@ -23,35 +23,13 @@ In this LibContinual reproduction, ordinary Experience Replay is reported as `ba
 
 ## How to Reproduce
 
-The IDER and ER baseline configs are in [config/zz_IDER](../../config/zz_IDER/).
+The IDER and ER baseline configs are in [config/zz_IDER](../../config/zz_IDER/). Run an experiment by passing the corresponding config name to `run_trainer.py`:
 
-Run one config:
-
-```bash
-bash scripts/train_one_config.sh ider_cifar100_buf500 0 0
+```shell
+python run_trainer.py --config ider_cifar100_buf500 --device 0 --seed 0
 ```
 
-Run the 5-seed IDER experiments:
-
-```bash
-bash scripts/run_cifar10_buf200_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_cifar10_buf500_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_cifar100_buf500_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_cifar100_buf2000_5seeds.sh 0 "0 1 2 3 4"
-bash scripts/run_tinyimagenet_buf500.sh 0 "0 1 2 3 4"
-```
-
-Run the 5-seed ER baseline experiments:
-
-```bash
-bash scripts/run_er_cifar10_buf200.sh 0 "0 1 2 3 4"
-bash scripts/run_er_cifar10_buf500.sh 0 "0 1 2 3 4"
-bash scripts/run_er_cifar100_buf500.sh 0 "0 1 2 3 4"
-bash scripts/run_er_cifar100_buf2000.sh 0 "0 1 2 3 4"
-bash scripts/run_er_tinyimagenet_buf500.sh 0 "0 1 2 3 4"
-```
-
-Experiment logs and generated summaries are written under the local `output/` directory, which is intentionally excluded from version control.
+Choose another IDER or ER config from `config/zz_IDER/` as needed. To reproduce multi-seed results, repeat the command with seeds `0`, `1`, `2`, `3`, and `4`.
 
 ## Results
 
