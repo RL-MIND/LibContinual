@@ -1,7 +1,15 @@
 *.log
 /log
+/output/
 .vscode
 __pycache__
+*.py[cod]
 .venv-3.8/
 .history
-data/
+/data/
+.DS_Store
+
+# Local dependency snapshots kept for environment comparison.
+/old_requirements.txt
+/old_requirements.yaml
+/IDER_EXPERIMENT_REPORT.md

@@ -1,0 +1,91 @@
+dataset: &dataset processed_tinyimg
+data_root: ./datasets/TINYIMG
+total_cls_num: &total_cls_num 200
+init_cls_num: &init_cls_num 20
+inc_cls_num: &inc_cls_num 20
+task_num: &task_num 10
+image_size: 64
+save_path: ./
+
+train_trfms:
+  - RandomCrop:
+      size: 64
+      padding: 4
+  - RandomHorizontalFlip: {}
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.4802, 0.4480, 0.3975]
+      std: [0.2770, 0.2691, 0.2821]
+test_trfms:
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.4802, 0.4480, 0.3975]
+      std: [0.2770, 0.2691, 0.2821]
+
+seed: 0
+deterministic: True
+device_ids: auto
+n_gpu: 1
+num_workers: 4
+pin_memory: False
+
+batch_size: 32
+init_epoch: 50
+epoch: 50
+val_per_epoch: 50
+testing_times: 1
+testing_per_task: True
+setting: task-agnostic
+eval_with_test: True
+
+optimizer:
+  name: SGD
+  kwargs:
+    lr: 0.03
+    momentum: 0.0
+    weight_decay: 0.0
+
+lr_scheduler:
+  name: MultiStepLR
+  kwargs:
+    gamma: 0.1
+    milestones: [35, 45]
+
+backbone:
+  name: resnet18_id2
+  kwargs:
+    num_classes: *total_cls_num
+    nf: 64
+    use_cos: False
+    args:
+      dataset: *dataset
+
+buffer:
+  name: LinearBuffer
+  kwargs:
+    buffer_size: 500
+    batch_size: 32
+    strategy: random
+
+classifier:
+  name: IDER
+  kwargs:
+    num_class: *total_cls_num
+    feat_dim: 512
+    init_cls_num: *init_cls_num
+    inc_cls_num: *inc_cls_num
+    weighta: 0.5
+    weightb: 0.4
+    weightc: 0.5
+    weightmask: 1.0
+    refine_inference: False
+    mask_unseen: False
+    online_buffer_update: True
+    class_balance: True
+    print_buffer_stats: True
+    buffer_update_after_step: True
+    buffer_storage: tensor
+    ce_detach_signal: False
+    distill_detach_signal: False
+    old_model_eval: False
+    freeze_old_model: True

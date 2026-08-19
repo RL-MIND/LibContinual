@@ -133,6 +133,12 @@ class ResNet(nn.Module):
         if 'cifar' in args["dataset"] or '5-datasets' in args["dataset"]:
             self.conv1 = nn.Sequential(nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False),
                                        nn.BatchNorm2d(self.inplanes), nn.ReLU(inplace=True))
+        elif 'tinyimg' in args["dataset"] or 'tiny-imagenet' in args["dataset"]:
+            # The original IDER/Mammoth ResNet18 uses a CIFAR-style 3x3
+            # stem for TinyImageNet instead of the torchvision ImageNet
+            # 7x7 stride-2 stem.
+            self.conv1 = nn.Sequential(nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False),
+                                       nn.BatchNorm2d(self.inplanes), nn.ReLU(inplace=True))
         elif 'imagenet' in args["dataset"]:
             if args["init_cls_num"] == args["inc_cls_num"]:
                 self.conv1 = nn.Sequential(

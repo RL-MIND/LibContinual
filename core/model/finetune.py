@@ -35,6 +35,11 @@ class Finetune(nn.Module):
         acc = torch.sum(pred == y).item()
         return pred, acc / x.size(0)
 
+    def predict_logits(self, data):
+        """Return logits for calibration metrics during evaluation."""
+        x = data['image'].to(self.device)
+        return self.classifier(self.backbone(x)['features'])
+
     def forward(self, x):
         return self.classifier(self.backbone(x)['features'])  
     

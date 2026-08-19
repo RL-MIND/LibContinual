@@ -108,17 +108,18 @@ def get_dataloader(config, mode, cls_map=None):
                 _, cls_code, cls_name = line.strip().split('\t')
                 cls_map[cls_code] = cls_name
 
-    elif cls_map is None and dataset == 'binary_cifar100':
+    elif cls_map is None and dataset in ['binary_cifar10', 'binary_cifar100']:
+        num_classes = 10 if dataset == 'binary_cifar10' else 100
         if 'class_order' in config.keys():
             class_order = config['class_order']
         elif config.get('shuffle', False):
             rng = np.random.RandomState(config['seed'])
-            class_order = rng.permutation(100).tolist()
+            class_order = rng.permutation(num_classes).tolist()
         else:
-            class_order = list(range(100))
+            class_order = list(range(num_classes))
         cls_map = {label: ori_label for label, ori_label in enumerate(class_order)}
 
-    elif cls_map is None and dataset != 'binary_cifar100':
+    elif cls_map is None and dataset not in ['binary_cifar10', 'binary_cifar100', 'processed_tinyimg']:
         # Apply class_order for debugging
         cls_list = sorted(os.listdir(os.path.join(data_root, mode)))
         #random.shuffle(cls_list)
