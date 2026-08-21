@@ -1,0 +1,101 @@
+dataset: cub200
+data_root: ./data/cub200
+image_size: 224
+
+init_cls_num: 20
+inc_cls_num: 20
+total_cls_num: 200
+task_num: 10
+
+init_epoch: 1
+epoch: 1
+batch_size: 128
+val_per_epoch: 1
+testing_times: 1
+setting: task-agnostic
+testing_per_task: true
+
+seed: 2023
+n_gpu: 1
+
+class_order: [98, 179, 114, 99, 81, 156, 146, 86, 162, 25,
+              31, 166, 77, 178, 136, 183, 135, 187, 45, 59,
+              181, 163, 4, 53, 92, 17, 159, 32, 9, 51,
+              39, 122, 197, 185, 87, 128, 16, 19, 137, 118,
+              127, 7, 189, 193, 60, 27, 148, 18, 174, 35,
+              196, 168, 52, 46, 188, 54, 74, 69, 30, 14,
+              95, 121, 169, 75, 22, 129, 103, 80, 70, 195,
+              72, 34, 40, 106, 175, 56, 171, 125, 198, 71,
+              104, 29, 152, 65, 44, 120, 82, 15, 2, 150,
+              184, 105, 0, 36, 117, 88, 190, 21, 113, 172,
+              55, 116, 89, 12, 144, 153, 62, 119, 139, 11,
+              83, 173, 42, 140, 8, 93, 61, 84, 123, 134,
+              143, 49, 157, 3, 91, 133, 115, 177, 24, 96,
+              85, 164, 109, 110, 26, 5, 37, 76, 167, 57,
+              23, 79, 1, 73, 63, 102, 124, 186, 165, 43,
+              158, 176, 67, 149, 100, 78, 151, 108, 111, 192,
+              33, 13, 180, 170, 130, 10, 64, 161, 94, 154,
+              132, 191, 48, 145, 101, 50, 66, 126, 141, 155,
+              28, 160, 68, 112, 38, 90, 147, 47, 182, 199,
+              20, 58, 107, 131, 142, 194, 97, 138, 6, 41]
+
+train_trfms:
+  - Resize:
+      size: 256
+      interpolation: BICUBIC
+  - CenterCrop:
+      size: 224
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+
+test_trfms:
+  - Resize:
+      size: 256
+      interpolation: BICUBIC
+  - CenterCrop:
+      size: 224
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+
+optimizer:
+  name: SGD
+  kwargs:
+    lr: 0.0
+
+lr_scheduler:
+  name: Constant
+
+backbone:
+  name: timm_backbone
+  kwargs:
+    pretrained: true
+    model_name: vit_base_patch16_224
+
+buffer:
+  name: LinearBuffer
+  kwargs:
+    buffer_size: 0
+    batch_size: 128
+    strategy: random
+
+classifier:
+  name: FlyCL
+  kwargs:
+    embedding_dim: 768
+    expand_dim: 10000
+    synaptic_degree: 300
+    coding_level: 0.3
+    ridge_lower: 6
+    ridge_upper: 10
+    gcv_backend: dual_eigh
+    disable_cudnn: true
+    use_projection: true
+    use_ridge: true
+    total_cls_num: 200
+    init_cls_num: 20
+    inc_cls_num: 20
+    mask_unseen_classes: false
