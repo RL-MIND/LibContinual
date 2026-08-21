@@ -377,7 +377,8 @@ class Trainer(object):
                                        'PRAKA', 
                                        'TRGP_CLIP', 
                                        'LoRAsub_DRS',
-                                       'CL_LoRA'
+                                       'CL_LoRA',
+                                       'FlyCL'
                         ]:
                         if self.rank == 0:
                             print(f" * Disabled validation for this method")

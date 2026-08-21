@@ -10,6 +10,7 @@ from .SiNet import SiNet_vit
 from .resnet_cbam import *
 from .alexnet import AlexNet_TRGP, AlexNet_API
 from .clip import clip
+from .timm_backbone import timm_backbone
 
 def get_backbone(config):
     """

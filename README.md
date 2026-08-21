@@ -43,7 +43,7 @@ LibContinual is an open-source continual learning toolbox based on PyTorch. The 
 + [SD_LoRA (ICLR 2025)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/sd_lora/README.md): Scalable Decoupled Low-Rank Adaptation for Class Incremental Learning
 + [LoRA_Sub_DRS (CVPR 2025)](https://github.com/RL-VIG/LibContinual/blob/master/reproduce/lora_sub_drs/README.md): LoRA Subtraction for Drift-Resistant Space in Exemplar-Free Continual Learning
 + [CL-LoRA (CVPR 2025)](https://github.com/RL-VIG/LibContinual/tree/master/reproduce/cl_lora/README.md): Continual Low-Rank Adaptation for Rehearsal-Free Class-Incremental Learning
-
++ [Fly-CL (ICLR 2026)](https://github.com/gfyddha/Fly-CL): A Fly-Inspired Framework for Efficient Decorrelation in Pre-trained Model-based Continual Representation Learning.
 <!-- ## Quick Installation
 
 Please refer to [`install.md`](https://libcontinual.readthedocs.io/en/latest/docs/install.html) <br>

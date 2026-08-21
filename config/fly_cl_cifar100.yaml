@@ -1,0 +1,93 @@
+
+dataset: cifar100
+data_root: ./data/cifar100
+image_size: 224
+
+init_cls_num: 10
+inc_cls_num: 10
+total_cls_num: 100
+task_num: 10
+
+
+init_epoch: 1
+epoch: 1
+batch_size: 128
+val_per_epoch: 1
+testing_times: 1
+setting: task-agnostic
+testing_per_task: true
+
+seed: 1993
+n_gpu: 1
+
+class_order: [61, 79, 33, 57, 4, 14, 21, 42, 44, 19,
+              51, 73, 45, 89, 35, 85, 39, 56, 0, 24,
+              65, 29, 9, 18, 13, 95, 41, 80, 96, 32,
+              15, 49, 22, 99, 63, 68, 1, 62, 46, 59,
+              23, 60, 7, 86, 3, 27, 67, 69, 50, 92,
+              31, 98, 76, 84, 97, 93, 43, 16, 30, 83,
+              12, 5, 66, 72, 48, 78, 54, 81, 53, 26,
+              20, 94, 74, 47, 88, 38, 90, 10, 36, 11,
+              40, 52, 64, 87, 91, 6, 8, 55, 77, 82,
+              25, 75, 17, 28, 70, 2, 58, 71, 37, 34]
+
+
+train_trfms:
+  - Resize:
+      size: 224
+      interpolation: BICUBIC
+  - CenterCrop:
+      size: 224
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+
+test_trfms:
+  - Resize:
+      size: 224
+      interpolation: BICUBIC
+  - CenterCrop:
+      size: 224
+  - ToTensor: {}
+  - Normalize:
+      mean: [0.5, 0.5, 0.5]
+      std: [0.5, 0.5, 0.5]
+
+optimizer:
+  name: SGD
+  kwargs:
+    lr: 0.0
+
+lr_scheduler:
+  name: Constant
+
+backbone:
+  name: timm_backbone
+  kwargs:
+    pretrained: true
+    model_name: vit_base_patch16_224
+
+buffer:
+  name: LinearBuffer
+  kwargs:
+    buffer_size: 0
+    batch_size: 128
+    strategy: random
+
+classifier:
+  name: FlyCL
+  kwargs:
+    embedding_dim: 768
+    expand_dim: 10000
+    synaptic_degree: 300
+    coding_level: 0.3
+    ridge_lower: 6
+    ridge_upper: 10
+
+    gcv_backend: dual_eigh
+    disable_cudnn: true
+    total_cls_num: 100
+    init_cls_num: 10
+    inc_cls_num: 10
+    mask_unseen_classes: false

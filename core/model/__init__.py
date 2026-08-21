@@ -35,3 +35,4 @@ from .dap import DAP
 from .sd_lora import SD_LoRA
 from .lora_sub import LoRAsub_DRS
 from .cl_lora import CL_LoRA
+from .fly_cl import FlyCL
