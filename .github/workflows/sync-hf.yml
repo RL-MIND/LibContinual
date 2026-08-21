@@ -22,6 +22,6 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
 
-          https://huggingface.co/RL-MIND/LibContinual
+          git remote add hf https://oauth2:${HF_TOKEN}@huggingface.co/RL-MIND/LibContinual
 
           git push hf main --force
