@@ -23,7 +23,7 @@ jobs:
 
         pip install huggingface_hub
 
-        huggingface-cli upload \
+        hf upload \
         RL-MIND/LibContinual \
         . \
         --repo-type model \
