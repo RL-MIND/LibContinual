@@ -12,25 +12,19 @@ jobs:
 
     steps:
 
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        lfs: true
 
 
-    - name: Install Git LFS
-      run: |
-        git lfs install
-
-
-    - name: Push to Hugging Face
+    - name: Upload to Hugging Face
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        git config --global user.email "github-actions@github.com"
-        git config --global user.name "github-actions"
 
-        git remote add hf https://oauth2:${HF_TOKEN}@huggingface.co/RL-MIND/LibContinual
+        pip install huggingface_hub
 
-        git push hf main --force
+        huggingface-cli upload \
+        RL-MIND/LibContinual \
+        . \
+        --repo-type model \
+        --commit-message "Sync from GitHub"
